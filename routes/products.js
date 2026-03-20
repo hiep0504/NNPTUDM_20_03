@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 let slugify = require('slugify')
 let productSchema = require('../schemas/products')
+let Inventory = require('../schemas/inventory')
 //mongoose --- mongoDB
 
 /* GET users listing. */
@@ -66,6 +67,14 @@ router.post('/', async function (req, res, next) {
       images: req.body.images
     })
     await newObj.save()
+    // create corresponding inventory for the product
+    try {
+      let inv = new Inventory({ product: newObj._id, stock: 0, reserved: 0, soldCount: 0 })
+      await inv.save()
+    } catch (invErr) {
+      // log inventory creation error but don't fail product creation
+      console.error('Failed to create inventory for product', invErr.message)
+    }
     res.send(newObj);
   } catch (error) {
     res.status(404).send(error.message);
